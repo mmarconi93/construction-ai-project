@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Portfolio Risk Report — Week of {{ week_start }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .header { display:flex; justify-content:space-between; align-items:baseline; gap: 16px; }
+    .muted { color:#666; }
+    .pill { display:inline-block; padding:2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .HIGH { background:#ffe0e0; }
+    .MED { background:#fff4cc; }
+    .LOW { background:#e6f7e6; }
+    table { width:100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align:left; vertical-align: top; }
+    th { font-size: 12px; color:#444; }
+    ul { margin: 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Portfolio Risk Report</h1>
+    <div class="muted">Week: <b>{{ week_start }}</b> → <b>{{ week_end }}</b></div>
+  </div>
+
+  <p class="muted">Ranked by risk score (highest first). Use this as an exec summary.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Project</th>
+        <th style="width:10%">Score</th>
+        <th style="width:12%">Band</th>
+        <th>Top drivers</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in projects %}
+      <tr>
+        <td>
+          <b>{{ p.project_name }}</b><br/>
+          <span class="muted">Project ID: {{ p.project_id }}</span><br/>
+          <span class="muted">
+            Latest report:
+            <a href="{{ base_url }}/v1/projects/{{ p.project_id }}/reports/latest" target="_blank">Open</a>
+          </span>
+        </td>
+        <td><b>{{ p.risk_score }}</b></td>
+        <td><span class="pill {{ p.risk_band }}">{{ p.risk_band }}</span></td>
+        <td>
+          {% if p.drivers and p.drivers|length > 0 %}
+            <ul>
+              {% for d in p.drivers %}
+                <li><b>{{ d.factor }}</b> — value: {{ d.value }}, points: {{ d.points }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <span class="muted">No drivers</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

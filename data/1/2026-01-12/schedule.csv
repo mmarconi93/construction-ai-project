@@ -1,0 +1,5 @@
+task_name,start_date,finish_date,percent_complete,is_critical,baseline_finish_date
+"Pour slab",2026-01-10,2026-01-16,40,true,2026-01-14
+"Frame level 1",2026-01-05,2026-01-20,60,true,2026-01-18
+"MEP rough-in",2026-01-08,2026-01-17,10,true,2026-01-15
+"Paint",2026-01-18,2026-01-25,0,false,2026-01-25

@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Pilot Project — Weekly Risk Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .badge { padding: 6px 10px; border-radius: 10px; display: inline-block; font-weight: 700; }
+    .LOW { background: #e6f7e6; }
+    .MED { background: #fff4cc; }
+    .HIGH { background: #ffe0e0; }
+    table { border-collapse: collapse; margin-top: 12px; width: 100%; max-width: 900px; }
+    td, th { border: 1px solid #ddd; padding: 8px; }
+    .drivers li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Pilot Project — Weekly Risk Report</h1>
+  <p><b>Week:</b> 2026-01-12 → 2026-01-19</p>
+
+  <h2>
+    Risk:
+    <span class="badge HIGH">HIGH</span>
+    (90/100)
+  </h2>
+
+  <h3>Top Drivers</h3>
+  
+    <ul class="drivers">
+      
+        <li><b>RFIs older than 14d</b> — value: 5.0, points: 20</li>
+      
+        <li><b>Avg RFI age (days)</b> — value: 28.0, points: 15</li>
+      
+        <li><b>Overdue submittals</b> — value: 3.0, points: 20</li>
+      
+        <li><b>Critical tasks slipping</b> — value: 2.0, points: 25</li>
+      
+        <li><b>Baseline slip on critical path</b> — value: 3.0, points: 10</li>
+      
+    </ul>
+  
+
+  <h3>Metrics</h3>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    
+      <tr><td>rfi_open</td><td>5</td></tr>
+    
+      <tr><td>rfi_avg_age_days</td><td>28.0</td></tr>
+    
+      <tr><td>rfi_over_14d</td><td>5</td></tr>
+    
+      <tr><td>rfi_opened_this_week</td><td>0</td></tr>
+    
+      <tr><td>rfi_closed_this_week</td><td>1</td></tr>
+    
+      <tr><td>submittal_pending</td><td>3</td></tr>
+    
+      <tr><td>submittal_overdue</td><td>3</td></tr>
+    
+      <tr><td>submittal_avg_cycle_days</td><td>8.0</td></tr>
+    
+      <tr><td>submittal_submitted_this_week</td><td>0</td></tr>
+    
+      <tr><td>submittal_approved_this_week</td><td>0</td></tr>
+    
+      <tr><td>critical_tasks_finishing_this_week</td><td>2</td></tr>
+    
+      <tr><td>critical_tasks_slipping</td><td>2</td></tr>
+    
+      <tr><td>critical_tasks_baseline_slip</td><td>3</td></tr>
+    
+  </table>
+
+  <h3>Recommended Actions (V1)</h3>
+  <ul>
+    
+      <li>Escalate stale RFIs (&gt;14 days). Assign an owner + due date to each.</li>
+    
+    
+      <li>Run a submittal closeout push: group overdue submittals by spec section + responsible party.</li>
+    
+    
+      <li>Review critical path tasks finishing this week that are &lt;80% complete; re-sequence or add resources.</li>
+    
+    
+  </ul>
+</body>
+</html>

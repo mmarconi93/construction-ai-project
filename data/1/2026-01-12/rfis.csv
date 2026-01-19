@@ -1,0 +1,7 @@
+created_date,closed_date,status,discipline,assignee
+2026-01-01,,Open,MEP,Alice
+2026-01-02,,Open,Structural,Bob
+2025-12-20,,Open,MEP,Alice
+2025-12-15,,Open,Architect,Chris
+2025-12-10,,Open,MEP,Alice
+2026-01-10,2026-01-12,Closed,MEP,Alice

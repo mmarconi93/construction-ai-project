@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Portfolio Risk Report — Week of 2026-01-12</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .header { display:flex; justify-content:space-between; align-items:baseline; gap: 16px; }
+    .muted { color:#666; }
+    .pill { display:inline-block; padding:2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .HIGH { background:#ffe0e0; }
+    .MED { background:#fff4cc; }
+    .LOW { background:#e6f7e6; }
+    table { width:100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align:left; vertical-align: top; }
+    th { font-size: 12px; color:#444; }
+    ul { margin: 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Portfolio Risk Report</h1>
+    <div class="muted">Week: <b>2026-01-12</b> → <b>2026-01-19</b></div>
+  </div>
+
+  <p class="muted">Ranked by risk score (highest first). Use this as an exec summary.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Project</th>
+        <th style="width:10%">Score</th>
+        <th style="width:12%">Band</th>
+        <th>Top drivers</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>
+          <b>Pilot Project</b><br/>
+          <span class="muted">Project ID: 1</span><br/>
+          <span class="muted">Latest report: /v1/projects/1/reports/latest</span>
+        </td>
+        <td><b>90</b></td>
+        <td><span class="pill HIGH">HIGH</span></td>
+        <td>
+          
+            <ul>
+              
+                <li><b>RFIs older than 14d</b> — value: 5.0, points: 20</li>
+              
+                <li><b>Avg RFI age (days)</b> — value: 28.0, points: 15</li>
+              
+                <li><b>Overdue submittals</b> — value: 3.0, points: 20</li>
+              
+                <li><b>Critical tasks slipping</b> — value: 2.0, points: 25</li>
+              
+                <li><b>Baseline slip on critical path</b> — value: 3.0, points: 10</li>
+              
+            </ul>
+          
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+</body>
+</html>
