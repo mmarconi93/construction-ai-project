@@ -1,505 +1,366 @@
+// web/app/portfolio/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import TopNav from "../ui/TopNav";
 import { getPortfolioWeek, listProjects, runAll } from "@/lib/api";
 
 function isoMonday(d: Date) {
-  // local Monday for the UI date input
-  const x = new Date(d);
-  const day = x.getDay(); // 0=Sun
-  const diff = (day === 0 ? -6 : 1) - day;
-  x.setDate(x.getDate() + diff);
-  const yyyy = x.getFullYear();
-  const mm = String(x.getMonth() + 1).padStart(2, "0");
-  const dd = String(x.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function fmtTime(ts?: number | null) {
-  if (!ts) return "";
-  return new Date(ts).toLocaleString();
-}
-
-function pillForBand(band?: string) {
-  const b = (band || "").toUpperCase();
-  if (b === "HIGH") return { bg: "#fff1f2", bd: "#fecdd3", fg: "#9f1239" };
-  if (b === "MED") return { bg: "#fffbeb", bd: "#fde68a", fg: "#92400e" };
-  return { bg: "#ecfdf5", bd: "#bbf7d0", fg: "#065f46" };
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  tone?: "neutral" | "good" | "warn" | "bad" | "info";
-}) {
-  const styles: Record<string, any> = {
-    neutral: { bg: "#ffffff", bd: "#e5e7eb", fg: "#111827" },
-    good: { bg: "#ecfdf5", bd: "#bbf7d0", fg: "#065f46" },
-    warn: { bg: "#fffbeb", bd: "#fde68a", fg: "#92400e" },
-    bad: { bg: "#fff1f2", bd: "#fecdd3", fg: "#9f1239" },
-    info: { bg: "#eff6ff", bd: "#bfdbfe", fg: "#1d4ed8" },
-  };
-
-  const s = styles[tone] ?? styles.neutral;
-
-  return (
-    <div
-      style={{
-        border: `1px solid ${s.bd}`,
-        borderRadius: 14,
-        padding: 14,
-        background: s.bg,
-        minWidth: 180,
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}
-    >
-      <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 800 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 950, marginTop: 6, color: s.fg }}>{value}</div>
-      {sub ? <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>{sub}</div> : null}
-    </div>
-  );
+  const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = x.getUTCDay(); // 0 Sun
+  const diff = (day === 0 ? -6 : 1) - day; // move to Monday
+  x.setUTCDate(x.getUTCDate() + diff);
+  return x.toISOString().slice(0, 10);
 }
 
 export default function PortfolioPage() {
   const [weekStart, setWeekStart] = useState(() => isoMonday(new Date()));
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [msg, setMsg] = useState("");
-  const [lastRunAt, setLastRunAt] = useState<number | null>(null);
+  const [portfolio, setPortfolio] = useState<any>(null);
+  const [projectsCount, setProjectsCount] = useState(0);
 
-  const [totalProjects, setTotalProjects] = useState<number | null>(null);
-
-  const [lastRunAll, setLastRunAll] = useState<any>(null);
-  const [portfolioWeek, setPortfolioWeek] = useState<any>(null);
-
-  const [reportNonce, setReportNonce] = useState(0);
-  const [iframeLoading, setIframeLoading] = useState(false);
-
-  const reportUrl = useMemo(() => {
-    return `/v1/portfolio/week/${weekStart}/report`;
-  }, [weekStart]);
-
-  const reportUrlBusted = useMemo(() => `${reportUrl}?t=${reportNonce}`, [reportUrl, reportNonce]);
-
-  const summary = lastRunAll?.summary || null;
-  const results: any[] = Array.isArray(lastRunAll?.results) ? lastRunAll.results : [];
-  const rankedOk: any[] = Array.isArray(lastRunAll?.ranked_ok) ? lastRunAll.ranked_ok : [];
-
-  const hasRun = !!summary;
-
-  // KPIs: show 0 instead of "—" until run
-  const okVal = hasRun ? summary.ok : 0;
-  const skippedVal = hasRun ? summary.skipped : 0;
-  const errorVal = hasRun ? summary.error : 0;
-
-  const projectsForWeek = useMemo(() => {
-    // Prefer run-all ranked_ok if present (freshest)
-    if (Array.isArray(rankedOk) && rankedOk.length > 0) return rankedOk;
-
-    // Fall back to portfolioWeek JSON (server truth)
-    if (Array.isArray(portfolioWeek?.projects)) return portfolioWeek.projects;
-
-    return [];
-    }, [rankedOk, portfolioWeek]);
-
-    const derived = useMemo(() => {
-    let low = 0, med = 0, high = 0;
-    let sum = 0;
-
-    for (const p of projectsForWeek) {
-        const score = Number(p?.risk_score) || 0;
-        sum += score;
-
-        const b = String(p?.risk_band || "").toUpperCase();
-        if (b === "HIGH") high++;
-        else if (b === "MED") med++;
-        else low++;
-    }
-
-    const count = projectsForWeek.length;
-    const avg = count ? Math.round(sum / count) : 0;
-
-    return { count, avg, low, med, high };
-    }, [projectsForWeek]);
-
-    const avgRisk = derived.avg;
-    const bandCounts = { low: derived.low, med: derived.med, high: derived.high, totalOk: derived.count };
-
-    const stackedTotal = Math.max(1, bandCounts.totalOk);
-    const lowPct = (bandCounts.low / stackedTotal) * 100;
-    const medPct = (bandCounts.med / stackedTotal) * 100;
-    const highPct = (bandCounts.high / stackedTotal) * 100;
-
-  function refreshIframe() {
-    setIframeLoading(true);
-    setReportNonce(Date.now());
-  }
-
-  // Fetch total projects immediately so KPI isn't blank
   useEffect(() => {
     (async () => {
       try {
         const ps = await listProjects();
-        setTotalProjects(ps.length);
+        setProjectsCount(ps.length);
       } catch {
-        setTotalProjects(null);
+        // ignore — portfolio can still render
       }
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-        try {
-        const w = await getPortfolioWeek(weekStart);
-        setPortfolioWeek(w);
-        } catch {
-        setPortfolioWeek(null);
-        }
-    })();
-    }, [weekStart]);
-
-  // Refresh report when week changes (and show loading overlay)
-  useEffect(() => {
-    refreshIframe();
-  }, [weekStart]);
-
-  async function onRunAll() {
-    setBusy(true);
-    setMsg("Running portfolio…");
+  async function refresh() {
+    setError(null);
     try {
-      const res = await runAll(weekStart);
-      setLastRunAll(res);
-      setLastRunAt(Date.now());
-
-      const ok = res?.summary?.ok ?? 0;
-      const skipped = res?.summary?.skipped ?? 0;
-      const error = res?.summary?.error ?? 0;
-      setMsg(`Run complete ✅  ok=${ok}, skipped=${skipped}, error=${error}`);
-
-      refreshIframe();
+      const data = await getPortfolioWeek(weekStart);
+      setPortfolio(data);
     } catch (e: any) {
-      setMsg(e?.message ?? "Run all failed");
-    } finally {
-      setBusy(false);
+      setError(e?.message || "Failed to load portfolio");
     }
   }
 
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekStart]);
+
+  async function runThisWeek() {
+    setLoading(true);
+    setError(null);
+    try {
+      await runAll(weekStart);
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Run all failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const rows = portfolio?.projects || [];
+  const okCount = rows.length;
+  const highCount = rows.filter((r: any) => r.risk_band === "HIGH").length;
+  const medCount = rows.filter((r: any) => r.risk_band === "MED").length;
+  const lowCount = rows.filter((r: any) => r.risk_band === "LOW").length;
+
+  const overallRisk = rows.length
+    ? Math.round(rows.reduce((a: number, r: any) => a + (r.risk_score || 0), 0) / rows.length)
+    : 0;
+
+  const weekEnd = useMemo(() => {
+    const d = new Date(`${weekStart}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 7);
+    return d.toISOString().slice(0, 10);
+  }, [weekStart]);
+
+  const total = Math.max(lowCount + medCount + highCount, 1);
+  const lowPct = (lowCount / total) * 100;
+  const medPct = (medCount / total) * 100;
+  const highPct = (highCount / total) * 100;
+
   return (
-    <section
-      style={{
-        display: "grid",
-        gap: 14,
-        background: "#f8fafc",
-        padding: 16,
-        borderRadius: 16,
-      }}
-    >
-      {/* Header / Controls */}
-      <div
-        style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: 14,
-          padding: 16,
-          background: "#fff",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "end",
-          flexWrap: "wrap",
-          gap: 10,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-        }}
-      >
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontSize: 18, fontWeight: 950 }}>Portfolio</div>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>Weekly risk ranking + executive report</div>
+    <>
+      <TopNav active="portfolio" />
 
-          <div style={{ fontSize: 12, color: msg.includes("✅") ? "#065f46" : "#6b7280", fontWeight: 800 }}>
-            {msg || (hasRun ? "" : "Run the portfolio to compute this week’s KPIs.")}
-            {lastRunAt ? <span style={{ marginLeft: 8 }}>• Last run: {fmtTime(lastRunAt)}</span> : null}
-          </div>
+      <div className="container">
+        <div className="pageHeader">
+          <h1 className="pageTitle">Dashboard</h1>
+          <p className="pageSubtitle">Latest portfolio exec summary (rendered by your FastAPI backend)</p>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end" }}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#555" }}>Week start (Monday)</label>
-            <input
-              type="date"
-              value={weekStart}
-              onChange={(e) => setWeekStart(e.target.value)}
-              disabled={busy}
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
+          <div className="glassCard" style={{ padding: 14, display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ display: "grid", gap: 6 }}>
+              <div
+                style={{
+                  color: "var(--text-tertiary)",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  letterSpacing: 1,
+                  textTransform: "uppercase",
+                }}
+              >
+                Week start (Monday)
+              </div>
+              <input
+                value={weekStart}
+                onChange={(e) => setWeekStart(e.target.value)}
+                type="date"
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid var(--border)",
+                  background: "rgba(0,0,0,0.2)",
+                  color: "var(--text-primary)",
+                }}
+              />
+            </div>
+
+            <button
+              onClick={runThisWeek}
+              disabled={loading}
               style={{
-                padding: 10,
-                border: "1px solid #d1d5db",
+                padding: "12px 14px",
                 borderRadius: 10,
-                minWidth: 165,
-                background: "#fff",
-              }}
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={onRunAll}
-            disabled={busy}
-            style={{
-              padding: "10px 12px",
-              border: "1px solid #111",
-              borderRadius: 12,
-              background: "#111",
-              color: "#fff",
-              cursor: busy ? "not-allowed" : "pointer",
-              fontWeight: 950,
-              boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-            }}
-          >
-            Run portfolio this week
-          </button>
-
-          <a
-            href={reportUrlBusted}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              padding: "10px 12px",
-              border: "1px solid #d1d5db",
-              borderRadius: 12,
-              background: "#fff",
-              textDecoration: "none",
-              color: "#111",
-              fontWeight: 850,
-            }}
-          >
-            Open report ↗
-          </a>
-
-          <button
-            type="button"
-            onClick={refreshIframe}
-            disabled={busy}
-            style={{
-              padding: "10px 12px",
-              border: "1px solid #d1d5db",
-              borderRadius: 12,
-              background: "#fff",
-              cursor: busy ? "not-allowed" : "pointer",
-              fontWeight: 850,
-            }}
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* KPI row */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-      <StatCard
-        label="Overall Risk (Avg)"
-        value={derived.avg}
-        sub={derived.count ? "Across scored projects" : "Not computed yet"}
-        tone="info"
-      />
-
-      <StatCard
-        label="Total Projects"
-        value={totalProjects ?? "—"}
-        sub="In your portfolio"
-        tone="neutral"
-      />
-
-      <StatCard
-        label="OK"
-        value={derived.count}
-        sub="Scored projects"
-        tone="good"
-      />
-
-      <StatCard
-        label="High Risk Projects"
-        value={derived.high}
-        sub={derived.count ? "Needs attention" : "Not computed yet"}
-        tone="bad"
-      />
-
-      <StatCard
-        label="Errors"
-        value={errorVal}
-        sub="Parse / compute issues"
-        tone="bad"
-      />
-      </div>
-
-      {/* Band distribution */}
-      <div
-        style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: 14,
-          padding: 16,
-          background: "#fff",
-          display: "grid",
-          gap: 10,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 950 }}>Risk Band Distribution</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>Based on ranked OK projects (from run-all).</div>
-          </div>
-        </div>
-
-        <div style={{ border: "1px solid #e5e7eb", borderRadius: 999, overflow: "hidden", height: 14 }}>
-          <div style={{ display: "flex", height: "100%" }}>
-            <div style={{ width: `${lowPct}%`, background: "#bbf7d0" }} />
-            <div style={{ width: `${medPct}%`, background: "#fde68a" }} />
-            <div style={{ width: `${highPct}%`, background: "#fecdd3" }} />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: "#374151", fontWeight: 900 }}>
-          <span>LOW: {bandCounts.low}</span>
-          <span>MED: {bandCounts.med}</span>
-          <span>HIGH: {bandCounts.high}</span>
-        </div>
-      </div>
-
-      {/* Projects table */}
-      <div
-        style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: 14,
-          padding: 16,
-          background: "#fff",
-          display: "grid",
-          gap: 10,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-        }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 950 }}>Projects</div>
-
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ textAlign: "left", color: "#6b7280", fontSize: 12 }}>
-                <th style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Project</th>
-                <th style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Status</th>
-                <th style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Score</th>
-                <th style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Band</th>
-                <th style={{ padding: "10px 8px", borderBottom: "1px solid #e5e7eb" }}>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: 10, color: "#6b7280" }}>
-                    Run the portfolio to populate this table.
-                  </td>
-                </tr>
-              ) : (
-                results
-                  .slice()
-                  .sort((a, b) => (Number(b?.risk_score) || 0) - (Number(a?.risk_score) || 0))
-                  .map((r) => {
-                    const status = String(r?.status || "");
-                    const band = String(r?.risk_band || "").toUpperCase();
-                    const pill = pillForBand(band);
-
-                    let detail = "";
-                    if (status === "skipped") {
-                      const missing = Array.isArray(r?.missing) ? r.missing.join(", ") : "";
-                      detail = missing ? `Missing: ${missing}` : "Missing uploads";
-                    } else if (status === "error") {
-                      if (r?.error_type === "parse_error") detail = "Parse error (CSV format/columns)";
-                      else detail = r?.error || "Error";
-                    } else {
-                      detail = "OK";
-                    }
-
-                    return (
-                      <tr key={`${r.project_id}-${status}`} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 8px", fontWeight: 950 }}>{r?.project_name || `Project ${r?.project_id}`}</td>
-                        <td style={{ padding: "10px 8px" }}>{status}</td>
-                        <td style={{ padding: "10px 8px", fontWeight: 950 }}>{r?.risk_score ?? "—"}</td>
-                        <td style={{ padding: "10px 8px" }}>
-                          {band ? (
-                            <span
-                              style={{
-                                padding: "3px 10px",
-                                borderRadius: 999,
-                                border: `1px solid ${pill.bd}`,
-                                background: pill.bg,
-                                color: pill.fg,
-                                fontWeight: 950,
-                                fontSize: 12,
-                              }}
-                            >
-                              {band}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 8px", color: "#6b7280" }}>{detail}</td>
-                      </tr>
-                    );
-                  })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Executive report iframe */}
-      <div
-        style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: 14,
-          padding: 16,
-          background: "#fff",
-          display: "grid",
-          gap: 10,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-        }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 950 }}>Executive Report Preview</div>
-
-        <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid #e5e7eb" }}>
-          {iframeLoading && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(255,255,255,0.75)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 950,
-                color: "#374151",
-                zIndex: 2,
+                border: "1px solid var(--border)",
+                background: "rgba(255,255,255,0.06)",
+                color: "var(--text-primary)",
+                fontWeight: 800,
+                cursor: "pointer",
               }}
             >
-              Loading report…
-            </div>
-          )}
+              {loading ? "Running..." : "Run portfolio this week"}
+            </button>
 
-          <iframe
-            title="Portfolio report"
-            src={reportUrlBusted}
-            onLoad={() => setIframeLoading(false)}
+            <button
+              onClick={refresh}
+              style={{
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "rgba(255,255,255,0.03)",
+                color: "var(--text-primary)",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div
+            className="glassCard"
             style={{
-              width: "100%",
-              height: 750,
-              border: 0,
-              background: "#fff",
+              padding: 14,
+              borderColor: "rgba(239,68,68,0.35)",
+              background: "rgba(239,68,68,0.08)",
+              marginBottom: 24,
             }}
-          />
+          >
+            <span style={{ fontWeight: 800 }}>Error:</span> {error}
+          </div>
+        )}
+
+        {/* Stats */}
+        <div className="statsGrid">
+          <div className="glassCard statCard statRisk">
+            <div className="statHeader">
+              <div className="statIcon">📊</div>
+            </div>
+            <div className="statLabel">Overall Risk</div>
+            <div className="statValue statValueRisk">{overallRisk}</div>
+            <div className="statDesc">Across scored projects</div>
+          </div>
+
+          <div className="glassCard statCard statTotal">
+            <div className="statHeader">
+              <div className="statIcon">📁</div>
+            </div>
+            <div className="statLabel">Total Projects</div>
+            <div className="statValue statValueTotal">{projectsCount}</div>
+            <div className="statDesc">In your portfolio</div>
+          </div>
+
+          <div className="glassCard statCard statOk">
+            <div className="statHeader">
+              <div className="statIcon">✓</div>
+            </div>
+            <div className="statLabel">OK Status</div>
+            <div className="statValue statValueOk">{okCount}</div>
+            <div className="statDesc">Scored projects</div>
+          </div>
+
+          <div className="glassCard statCard statHigh">
+            <div className="statHeader">
+              <div className="statIcon">⚠</div>
+            </div>
+            <div className="statLabel">High Risk</div>
+            <div className="statValue statValueHigh">{highCount}</div>
+            <div className="statDesc">Needs attention</div>
+          </div>
+
+          <div className="glassCard statCard statError">
+            <div className="statHeader">
+              <div className="statIcon">⚡</div>
+            </div>
+            <div className="statLabel">Errors</div>
+            <div className="statValue statValueError">0</div>
+            <div className="statDesc">Parse / compute issues</div>
+          </div>
+        </div>
+
+        {/* Risk Distribution */}
+        <div className="glassCard riskDistribution">
+          <div className="sectionHeader">
+            <div>
+              <h2 className="sectionTitle">Risk Band Distribution</h2>
+              <p className="sectionSubtitle">Based on ranked OK projects (from run-all)</p>
+            </div>
+          </div>
+
+          <div className="riskBar">
+            {lowCount > 0 && (
+              <div className="riskSegment riskLow" style={{ width: `${lowPct}%` }}>
+                LOW: {lowCount}
+              </div>
+            )}
+            {medCount > 0 && (
+              <div className="riskSegment riskMed" style={{ width: `${medPct}%` }}>
+                MED: {medCount}
+              </div>
+            )}
+            {highCount > 0 && (
+              <div className="riskSegment riskHigh" style={{ width: `${highPct}%` }}>
+                HIGH: {highCount}
+              </div>
+            )}
+          </div>
+
+          <div className="riskLegend">
+            <div className="legendItem">
+              <div className="legendIndicator legendLow" />
+              <div>
+                <div className="legendLabel">Low Risk</div>
+                <div className="legendValue">{lowCount}</div>
+              </div>
+            </div>
+
+            <div className="legendItem">
+              <div className="legendIndicator legendMed" />
+              <div>
+                <div className="legendLabel">Medium Risk</div>
+                <div className="legendValue">{medCount}</div>
+              </div>
+            </div>
+
+            <div className="legendItem">
+              <div className="legendIndicator legendHigh" />
+              <div>
+                <div className="legendLabel">High Risk</div>
+                <div className="legendValue">{highCount}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Report */}
+        <div>
+          <div className="reportHeader">
+            <h2 className="reportTitle">Portfolio Risk Report</h2>
+            <div className="dateBadge">
+              Week: {weekStart} → {weekEnd}
+            </div>
+          </div>
+
+          <div className="glassCard reportCard">
+            <div className="cardHeader">
+              <h3 className="cardTitle">Portfolio Risk Report</h3>
+              <p className="cardDesc">Ranked by risk score (highest first). Use this as an exec summary.</p>
+            </div>
+
+            <div className="tableWrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Score</th>
+                    <th>Band</th>
+                    <th>Top drivers</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r: any) => (
+                    <tr key={r.project_id}>
+                      <td>
+                        <div style={{ display: "grid", gap: 6 }}>
+                          <div style={{ fontWeight: 800, fontSize: 18 }}>{r.project_name}</div>
+                          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>
+                            Project ID: {r.project_id}
+                          </div>
+                          <a
+                            href={`/projects/${r.project_id}`}
+                            style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 700 }}
+                          >
+                            Latest report: Open →
+                          </a>
+                        </div>
+                      </td>
+
+                      <td style={{ fontSize: 42, fontWeight: 900, letterSpacing: -1 }}>{r.risk_score}</td>
+
+                      <td>
+                        {r.risk_band === "LOW" ? (
+                          <span className="badgeLow">Low</span>
+                        ) : (
+                          <span style={{ color: "var(--text-secondary)" }}>{r.risk_band}</span>
+                        )}
+                      </td>
+
+                      <td>
+                        <div style={{ display: "grid", gap: 12 }}>
+                          {(r.drivers || []).slice(0, 2).map((d: any, idx: number) => (
+                            <div
+                              key={idx}
+                              style={{
+                                padding: 14,
+                                background: "rgba(0,0,0,0.2)",
+                                borderRadius: 10,
+                                border: "1px solid var(--border)",
+                              }}
+                            >
+                              <div style={{ fontWeight: 800, marginBottom: 6 }}>{d.factor}</div>
+                              <div style={{ color: "var(--text-secondary)", fontSize: 13, display: "flex", gap: 12 }}>
+                                <span>
+                                  value: <span style={{ color: "var(--text-primary)" }}>{String(d.value)}</span>
+                                </span>
+                                <span style={{ color: "var(--accent)", fontWeight: 800 }}>points: {d.points}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {rows.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ padding: 24, color: "var(--text-secondary)" }}>
+                        No data yet. Run the portfolio to compute the week.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+    </>
   );
 }
