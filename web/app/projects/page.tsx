@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { listProjects } from "@/lib/api";
+import { listProjects, type Project } from "@/lib/api";
 import CreateProjectForm from "./ui/CreateProjectForm";
 
 export default async function ProjectsPage() {
-  let projects = [];
+  let projects: Project[] = [];
   let apiError: string | null = null;
 
   try {
@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
             </tr>
           </thead>
           <tbody>
-            {projects.map((p: any) => (
+            {projects.map((p) => (
               <tr key={p.id}>
                 <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
                   <strong>{p.name}</strong>
