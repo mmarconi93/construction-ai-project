@@ -1,4 +1,3 @@
-import { API_BASE } from "@/lib/api";
 import ProjectRunner from "./ui/ProjectRunner";
 
 export default async function ProjectDetailPage({
@@ -29,7 +28,7 @@ export default async function ProjectDetailPage({
       <div style={{ border: "1px solid #ddd", borderRadius: 10, overflow: "hidden" }}>
         <iframe
           id="project-report"
-          src={`${API_BASE}/v1/projects/${projectId}/reports/latest`}
+          src={`/v1/projects/${projectId}/reports/latest`}
           style={{ width: "100%", height: 720, border: 0 }}
         />
       </div>

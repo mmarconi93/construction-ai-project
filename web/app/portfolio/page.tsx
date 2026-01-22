@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { API_BASE, getPortfolioWeek, listProjects, runAll } from "@/lib/api";
+import { getPortfolioWeek, listProjects, runAll } from "@/lib/api";
 
 function isoMonday(d: Date) {
   // local Monday for the UI date input
@@ -82,7 +82,7 @@ export default function PortfolioPage() {
   const [iframeLoading, setIframeLoading] = useState(false);
 
   const reportUrl = useMemo(() => {
-    return `${API_BASE}/v1/portfolio/week/${weekStart}/report`;
+    return `/v1/portfolio/week/${weekStart}/report`;
   }, [weekStart]);
 
   const reportUrlBusted = useMemo(() => `${reportUrl}?t=${reportNonce}`, [reportUrl, reportNonce]);

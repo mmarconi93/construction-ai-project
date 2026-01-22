@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { API_BASE, runWeekly, uploadFile, ApiError } from "@/lib/api";
 
 function isoMonday(d: Date) {
   const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -97,7 +96,7 @@ export default function ProjectRunner({ projectId }: { projectId: number }) {
   );
 
   const reportWeekUrl = useMemo(() => {
-    return `${API_BASE}/v1/projects/${projectId}/reports/week/${weekStart}`;
+    return `/v1/projects/${projectId}/reports/week/${weekStart}`;
   }, [projectId, weekStart]);
 
   const reportWeekUrlBusted = useMemo(() => {
