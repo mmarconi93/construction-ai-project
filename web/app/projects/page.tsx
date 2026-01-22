@@ -8,8 +8,8 @@ export default async function ProjectsPage() {
 
   try {
     projects = await listProjects();
-  } catch (e: any) {
-    apiError = e?.message ?? "Failed to reach API";
+  } catch (e: unknown) {
+    apiError = e instanceof Error ? e.message : "Failed to reach API";
   }
 
   return (
@@ -36,9 +36,13 @@ export default async function ProjectsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Name</th>
-              <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Timezone</th>
-              <th style={{ padding: 10, borderBottom: "1px solid #eee" }}></th>
+              <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>
+                Name
+              </th>
+              <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>
+                Timezone
+              </th>
+              <th style={{ padding: 10, borderBottom: "1px solid #eee" }} />
             </tr>
           </thead>
           <tbody>
@@ -47,12 +51,15 @@ export default async function ProjectsPage() {
                 <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
                   <strong>{p.name}</strong>
                 </td>
-                <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{p.timezone}</td>
+                <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
+                  {p.timezone}
+                </td>
                 <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
                   <Link href={`/projects/${p.id}`}>Open</Link>
                 </td>
               </tr>
             ))}
+
             {projects.length === 0 && !apiError && (
               <tr>
                 <td colSpan={3} style={{ padding: 14, color: "#666" }}>
