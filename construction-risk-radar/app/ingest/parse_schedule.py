@@ -20,6 +20,8 @@ def parse_schedule_csv(df: pd.DataFrame) -> pd.DataFrame:
     df.columns = [str(c).strip() for c in df.columns]
     found = list(df.columns)
 
+    # Normalize: lower-case, remove spaces, replace '-' with '_'
+    # NOTE: underscores are preserved (so current_finish stays current_finish)
     lower = {c: c.lower().replace(" ", "").replace("-", "_") for c in df.columns}
 
     col_map = {
@@ -28,36 +30,47 @@ def parse_schedule_csv(df: pd.DataFrame) -> pd.DataFrame:
         "taskname": "task_name",
         "name": "task_name",
         "activity": "task_name",
-        "activity_name": "task_name",
+        "activityname": "task_name",
+        "activity_name": "task_name",  # if they already have underscore
+
         # start
         "start": "start_date",
         "startdate": "start_date",
         "start_date": "start_date",
+        "currentstart": "start_date",
+        "currentstartdate": "start_date",
         "current_start": "start_date",
         "current_start_date": "start_date",
+
         # finish/current finish
         "finish": "finish_date",
         "finishdate": "finish_date",
         "finish_date": "finish_date",
-        "current_finish": "finish_date",
-        "current_finish_date": "finish_date",
         "currentfinish": "finish_date",
         "currentfinishdate": "finish_date",
+        "current_finish": "finish_date",
+        "current_finish_date": "finish_date",
+
         # percent
         "percentcomplete": "percent_complete",
         "%complete": "percent_complete",
         "percent_complete": "percent_complete",
         "%_complete": "percent_complete",
+
         # critical
         "critical": "is_critical",
         "iscritical": "is_critical",
         "is_critical": "is_critical",
+        "criticalpath": "is_critical",
         "critical_path": "is_critical",
-        # baseline
+        "cp": "is_critical",
+
+        # baseline finish
         "baselinefinish": "baseline_finish_date",
-        "baseline_finish": "baseline_finish_date",
         "baselinefinishdate": "baseline_finish_date",
+        "baseline_finish": "baseline_finish_date",
         "baseline_finish_date": "baseline_finish_date",
+        "blfinish": "baseline_finish_date",
         "bl_finish": "baseline_finish_date",
     }
 
