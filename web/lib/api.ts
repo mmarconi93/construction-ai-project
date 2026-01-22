@@ -1,8 +1,12 @@
 // web/lib/api.ts
 
-function getServerOrigin() {
-  // Best: explicit canonical origin (set in Vercel as SITE_URL)
-  // Example: https://construction-ai-project-xyz.vercel.app
+function getServerApiBase() {
+  // ✅ Server-side (Vercel runtime) should call Cloud Run directly
+  // Set this in Vercel as an Environment Variable:
+  // API_BASE_INTERNAL="https://<your-cloud-run-service>.run.app"
+  if (process.env.API_BASE_INTERNAL) return process.env.API_BASE_INTERNAL;
+
+  // Optional: explicit canonical site URL (rarely needed for API calls)
   if (process.env.SITE_URL) return process.env.SITE_URL;
 
   // Optional: if you ever want a public canonical URL available to the browser too
@@ -19,11 +23,11 @@ function apiUrl(path: string) {
   // Always call with "/v1/..."
   if (!path.startsWith("/")) path = `/${path}`;
 
-  // In the browser, relative URLs are perfect (and rewrites will apply)
+  // ✅ Browser: use relative URL so rewrites apply
   if (typeof window !== "undefined") return path;
 
-  // On the server, Node needs an absolute URL
-  return `${getServerOrigin()}${path}`;
+  // ✅ Server: absolute URL, preferably Cloud Run via API_BASE_INTERNAL
+  return `${getServerApiBase()}${path}`;
 }
 
 export type Project = {
