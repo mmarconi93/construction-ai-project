@@ -28,26 +28,26 @@ export default async function ProjectsPage() {
           <div
             className="glassCard"
             style={{
-              padding: 14,
-              borderColor: "rgba(239,68,68,0.35)",
-              background: "rgba(239,68,68,0.08)",
-              marginBottom: 18,
+              padding: "1.5rem",
+              borderColor: "var(--danger)",
+              background: "rgba(239, 68, 68, 0.1)",
+              marginBottom: "2rem",
             }}
           >
-            <span style={{ fontWeight: 800 }}>API error:</span> {apiError}
+            <span style={{ fontWeight: 800, color: "var(--danger)" }}>API error:</span>{" "}
+            <span style={{ color: "var(--text-primary)" }}>{apiError}</span>
             <span style={{ color: "var(--text-secondary)" }}>
-              {" "}
-              — Is the backend reachable?
+              {" "}— Is the backend reachable?
             </span>
           </div>
         )}
 
-        <div style={{ display: "grid", gap: 18 }}>
-          {/* Create */}
-          <div className="glassCard" style={{ padding: 18 }}>
-            <div className="sectionHeader" style={{ marginBottom: 10 }}>
+        <div style={{ display: "grid", gap: "2rem" }}>
+          {/* Create Project Section */}
+          <div className="glassCard" style={{ padding: "2.5rem" }}>
+            <div className="sectionHeader" style={{ marginBottom: "1.5rem" }}>
               <div>
-                <h2 className="sectionTitle">Create project</h2>
+                <h2 className="sectionTitle">Create Project</h2>
                 <p className="sectionSubtitle">Projects are stored in the backend database.</p>
               </div>
             </div>
@@ -55,13 +55,11 @@ export default async function ProjectsPage() {
             <CreateProjectForm />
           </div>
 
-          {/* List */}
-          <div className="glassCard" style={{ padding: 0, overflow: "hidden" }}>
-            <div className="cardHeader" style={{ padding: 18 }}>
-              <h2 className="cardTitle" style={{ margin: 0 }}>
-                Your projects
-              </h2>
-              <p className="cardDesc" style={{ margin: "6px 0 0" }}>
+          {/* Projects List */}
+          <div className="glassCard reportCard">
+            <div className="cardHeader">
+              <h2 className="cardTitle">Your Projects</h2>
+              <p className="cardDesc">
                 Click a project to upload files, run weekly scoring, and open reports.
               </p>
             </div>
@@ -70,30 +68,50 @@ export default async function ProjectsPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>Project</th>
                     <th>Timezone</th>
-                    <th style={{ textAlign: "right" }}>Open</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {projects.map((p) => (
                     <tr key={p.id}>
                       <td>
-                        <div style={{ display: "grid", gap: 6 }}>
-                          <div style={{ fontWeight: 900, fontSize: 16 }}>{p.name}</div>
-                          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                          <div style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--text-primary)" }}>
+                            {p.name}
+                          </div>
+                          <div 
+                            style={{ 
+                              fontFamily: "monospace",
+                              color: "var(--text-tertiary)", 
+                              fontSize: "0.8rem" 
+                            }}
+                          >
                             Project ID: {p.id}
                           </div>
                         </div>
                       </td>
-                      <td style={{ color: "var(--text-secondary)" }}>{p.timezone}</td>
+                      <td>
+                        <span 
+                          style={{ 
+                            color: "var(--text-secondary)",
+                            fontFamily: "monospace",
+                            fontSize: "0.9rem"
+                          }}
+                        >
+                          {p.timezone}
+                        </span>
+                      </td>
                       <td style={{ textAlign: "right" }}>
                         <Link
                           href={`/projects/${p.id}`}
                           style={{
                             color: "var(--accent)",
                             textDecoration: "none",
-                            fontWeight: 800,
+                            fontWeight: 700,
+                            fontSize: "0.95rem",
+                            transition: "all 0.3s",
                           }}
                         >
                           Open →
@@ -104,8 +122,20 @@ export default async function ProjectsPage() {
 
                   {projects.length === 0 && !apiError && (
                     <tr>
-                      <td colSpan={3} style={{ padding: 24, color: "var(--text-secondary)" }}>
-                        No projects yet. Create one above to get started.
+                      <td 
+                        colSpan={3} 
+                        style={{ 
+                          padding: "3rem 2rem",
+                          textAlign: "center",
+                          color: "var(--text-secondary)" 
+                        }}
+                      >
+                        <div style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>
+                          No projects yet.
+                        </div>
+                        <div style={{ fontSize: "0.9rem", color: "var(--text-tertiary)" }}>
+                          Create one above to get started.
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -114,18 +144,28 @@ export default async function ProjectsPage() {
             </div>
           </div>
 
-          {/* Helpful hint */}
+          {/* Helpful Tip */}
           <div
             className="glassCard"
             style={{
-              padding: 16,
-              background: "rgba(255,255,255,0.04)",
+              padding: "1.5rem",
+              background: "rgba(59, 130, 246, 0.05)",
+              borderColor: "rgba(59, 130, 246, 0.3)",
             }}
           >
-            <div style={{ fontWeight: 900, marginBottom: 6 }}>Tip</div>
-            <div style={{ color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              After creating a project, open it to upload RFIs / Submittals / Schedule and run weekly scoring.
-              Reports render from the FastAPI backend.
+            <div 
+              style={{ 
+                fontWeight: 800,
+                marginBottom: "0.75rem",
+                fontSize: "1rem",
+                color: "var(--text-primary)"
+              }}
+            >
+              💡 Tip
+            </div>
+            <div style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "0.95rem" }}>
+              After creating a project, open it to upload RFIs, Submittals, and Schedule files, 
+              then run weekly scoring. Reports are rendered from the FastAPI backend.
             </div>
           </div>
         </div>

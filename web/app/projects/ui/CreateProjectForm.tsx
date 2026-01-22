@@ -28,39 +28,102 @@ export default function CreateProjectForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800 }}>Create project</h2>
-
-      <div style={{ display: "grid", gap: 6 }}>
-        <label style={{ fontSize: 12, color: "#555" }}>Project name</label>
+    <form onSubmit={onSubmit} style={{ display: "grid", gap: 16, maxWidth: 600 }}>
+      <div style={{ display: "grid", gap: 8 }}>
+        <label 
+          style={{ 
+            fontSize: "0.8rem",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "var(--text-tertiary)"
+          }}
+        >
+          Project name
+        </label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          placeholder="Pilot Project"
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
+          placeholder="e.g., Downtown Office Tower"
+          style={{ 
+            padding: "12px 14px",
+            border: "1px solid var(--border)",
+            borderRadius: "10px",
+            background: "rgba(0, 0, 0, 0.2)",
+            color: "var(--text-primary)",
+            fontSize: "1rem",
+            fontWeight: 500,
+          }}
         />
       </div>
 
-      <div style={{ display: "grid", gap: 6 }}>
-        <label style={{ fontSize: 12, color: "#555" }}>Timezone</label>
+      <div style={{ display: "grid", gap: 8 }}>
+        <label 
+          style={{ 
+            fontSize: "0.8rem",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "var(--text-tertiary)"
+          }}
+        >
+          Timezone
+        </label>
         <input
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
           placeholder="America/Chicago"
-          style={{ padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
+          style={{ 
+            padding: "12px 14px",
+            border: "1px solid var(--border)",
+            borderRadius: "10px",
+            background: "rgba(0, 0, 0, 0.2)",
+            color: "var(--text-primary)",
+            fontSize: "1rem",
+            fontWeight: 500,
+          }}
         />
       </div>
 
       <button
         type="submit"
         disabled={busy}
-        style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #ccc" }}
+        style={{ 
+          padding: "14px 20px",
+          borderRadius: "10px",
+          border: "1px solid var(--accent)",
+          background: busy 
+            ? "rgba(59, 130, 246, 0.3)" 
+            : "linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2))",
+          color: "var(--text-primary)",
+          fontWeight: 800,
+          fontSize: "0.9rem",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+          cursor: busy ? "not-allowed" : "pointer",
+          transition: "all 0.3s",
+          opacity: busy ? 0.6 : 1,
+        }}
       >
-        {busy ? "Creating..." : "Create"}
+        {busy ? "Creating..." : "Create Project"}
       </button>
 
-      {err && <div style={{ color: "crimson" }}>{err}</div>}
+      {err && (
+        <div 
+          style={{ 
+            padding: "12px 16px",
+            borderRadius: "10px",
+            border: "1px solid var(--danger)",
+            background: "rgba(239, 68, 68, 0.1)",
+            color: "var(--danger)",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+          }}
+        >
+          <strong>Error:</strong> {err}
+        </div>
+      )}
     </form>
   );
 }
