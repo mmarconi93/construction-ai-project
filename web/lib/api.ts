@@ -1,5 +1,30 @@
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "");
+// web/lib/api.ts
+
+function getServerOrigin() {
+  // Best: explicit canonical origin (set in Vercel as SITE_URL)
+  // Example: https://construction-ai-project-xyz.vercel.app
+  if (process.env.SITE_URL) return process.env.SITE_URL;
+
+  // Optional: if you ever want a public canonical URL available to the browser too
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+
+  // Vercel provides VERCEL_URL like: myapp.vercel.app (no scheme)
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+
+  // Local dev fallback (Next dev server)
+  return "http://localhost:3000";
+}
+
+function apiUrl(path: string) {
+  // Always call with "/v1/..."
+  if (!path.startsWith("/")) path = `/${path}`;
+
+  // In the browser, relative URLs are perfect (and rewrites will apply)
+  if (typeof window !== "undefined") return path;
+
+  // On the server, Node needs an absolute URL
+  return `${getServerOrigin()}${path}`;
+}
 
 export type Project = {
   id: number;
@@ -45,24 +70,24 @@ async function throwApiError(res: Response, fallbackMsg: string): Promise<never>
   const payload = await safeJson(res);
 
   const msg =
-    payload?.detail?.message ||
-    payload?.detail?.msg ||
-    payload?.detail ||
-    payload?.message ||
-    payload?.error ||
+    (payload as any)?.detail?.message ||
+    (payload as any)?.detail?.msg ||
+    (payload as any)?.detail ||
+    (payload as any)?.message ||
+    (payload as any)?.error ||
     fallbackMsg;
 
   throw new ApiError(msg, res.status, payload);
 }
 
 export async function listProjects(): Promise<Project[]> {
-  const res = await fetch(`${API_BASE}/v1/projects`, { cache: "no-store" });
+  const res = await fetch(apiUrl("/v1/projects"), { cache: "no-store" });
   if (!res.ok) return throwApiError(res, `Failed to list projects: ${res.status}`);
   return res.json();
 }
 
 export async function createProject(payload: { name: string; timezone: string }): Promise<Project> {
-  const res = await fetch(`${API_BASE}/v1/projects`, {
+  const res = await fetch(apiUrl("/v1/projects"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -82,7 +107,7 @@ export async function uploadFile(opts: {
   fd.append("week_start", opts.weekStart);
   fd.append("file", opts.file);
 
-  const res = await fetch(`${API_BASE}/v1/projects/${opts.projectId}/uploads`, {
+  const res = await fetch(apiUrl(`/v1/projects/${opts.projectId}/uploads`), {
     method: "POST",
     body: fd,
   });
@@ -95,7 +120,7 @@ export async function runWeekly(projectId: number, weekStart: string) {
   const fd = new FormData();
   fd.append("week_start", weekStart);
 
-  const res = await fetch(`${API_BASE}/v1/projects/${projectId}/run-weekly`, {
+  const res = await fetch(apiUrl(`/v1/projects/${projectId}/run-weekly`), {
     method: "POST",
     body: fd,
   });
@@ -108,7 +133,7 @@ export async function runAll(weekStart: string) {
   const fd = new FormData();
   fd.append("week_start", weekStart);
 
-  const res = await fetch(`${API_BASE}/v1/run-all`, {
+  const res = await fetch(apiUrl("/v1/run-all"), {
     method: "POST",
     body: fd,
   });
@@ -118,7 +143,7 @@ export async function runAll(weekStart: string) {
 }
 
 export async function getPortfolioWeek(weekStart: string): Promise<PortfolioWeek> {
-  const res = await fetch(`${API_BASE}/v1/portfolio/week/${weekStart}`, { cache: "no-store" });
+  const res = await fetch(apiUrl(`/v1/portfolio/week/${weekStart}`), { cache: "no-store" });
   if (!res.ok) return throwApiError(res, "Failed to load portfolio week");
   return res.json();
 }
