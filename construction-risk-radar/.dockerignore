@@ -1,0 +1,7 @@
+../data/
+../artifacts/
+../web/
+../.git/
+../.venv/
+**/__pycache__/
+**/*.pyc
